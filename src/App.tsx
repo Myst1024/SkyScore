@@ -150,9 +150,7 @@ export function App() {
         <div className="text-center space-y-2 py-6">
           <div className="flex items-center justify-center gap-3">
             <Cloud className="h-12 w-12 text-sky-500" />
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
-              Sky Score
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-sky-500">Sky Score</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover how perfectly the weather matches your preferences over the next 5 days
