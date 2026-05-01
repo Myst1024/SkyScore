@@ -1,0 +1,368 @@
+import { useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  formatDayLabel,
+  formatTooltipTime,
+  formatXAxisLabel,
+  getMidnightFiveDaysLater,
+  getScoreColor,
+  getScoreDescription,
+} from "@/lib/chart-utils";
+import type { SkyScore, WeatherParameter, WeatherPreferences } from "@/lib/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+
+interface ForecastChartProps {
+  scores: SkyScore[];
+  locationName?: string;
+  preferences?: WeatherPreferences;
+}
+
+interface ChartDataPoint {
+  index: number;
+  score: number;
+  timestamp: string;
+  temperature: number;
+  humidity: number;
+  windSpeed: number;
+  precipitationChance: number;
+  cloudCover: number;
+  shortForecast?: string;
+  // Individual parameter scores
+  temperatureScore: number;
+  humidityScore: number;
+  windScore: number;
+  rainScore: number;
+  cloudCoverScore: number;
+}
+
+interface ParameterConfig {
+  key: WeatherParameter;
+  dataKey: string;
+  label: string;
+  color: string;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: ChartDataPoint }>;
+}
+
+function getScoreImpactColor(score: number): string {
+  if (score >= 80) return "hsl(120, 70%, 40%)"; // Green - positive impact
+  if (score >= 60) return "hsl(45, 70%, 45%)"; // Yellow - neutral/good
+  if (score >= 40) return "hsl(30, 70%, 50%)"; // Orange - moderate negative
+  return "hsl(0, 70%, 50%)"; // Red - strong negative impact
+}
+
+function CustomTooltip({ active, payload }: TooltipProps) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  const data = payload[0]!.payload as ChartDataPoint;
+
+  return (
+    <div className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-2">
+      <div className="font-semibold text-sm border-b pb-2">{formatTooltipTime(data.timestamp)}</div>
+      <div className="space-y-1 text-xs">
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-bold text-base" style={{ color: getScoreColor(data.score) }}>
+            Sky Score: {data.score}/100
+          </span>
+          <span className="text-muted-foreground">({getScoreDescription(data.score)})</span>
+        </div>
+        {data.shortForecast && (
+          <div className="text-muted-foreground italic">{data.shortForecast}</div>
+        )}
+        <div className="pt-2 space-y-1 border-t">
+          <div className="flex justify-between items-center">
+            <span>Temperature:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.temperature}°F</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.temperatureScore) }}
+              >
+                ({data.temperatureScore})
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Humidity:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.humidity}%</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.humidityScore) }}
+              >
+                ({data.humidityScore})
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Wind:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.windSpeed} mph</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.windScore) }}
+              >
+                ({data.windScore})
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Rain Chance:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.precipitationChance}%</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.rainScore) }}
+              >
+                ({data.rainScore})
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Cloud Cover:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.cloudCover}%</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.cloudCoverScore) }}
+              >
+                ({data.cloudCoverScore})
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ForecastChart({ scores, locationName, preferences }: ForecastChartProps) {
+  const [hoveredLine, setHoveredLine] = useState<string | null>(null);
+
+  if (scores.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sky Score Forecast</CardTitle>
+          <CardDescription>No forecast data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
+            Enter a location to see your forecast
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Define parameter configurations with colors
+  const parameterConfigs: ParameterConfig[] = [
+    {
+      key: "temperature",
+      dataKey: "temperatureScore",
+      label: "Temperature",
+      color: "hsl(0, 70%, 50%)",
+    },
+    { key: "humidity", dataKey: "humidityScore", label: "Humidity", color: "hsl(200, 70%, 50%)" },
+    { key: "wind", dataKey: "windScore", label: "Wind", color: "hsl(160, 70%, 50%)" },
+    { key: "rain", dataKey: "rainScore", label: "Rain", color: "hsl(240, 70%, 50%)" },
+    {
+      key: "cloudCover",
+      dataKey: "cloudCoverScore",
+      label: "Cloud Cover",
+      color: "hsl(280, 70%, 50%)",
+    },
+  ];
+
+  // Filter parameters based on priority (exclude priority 3 = "Doesn't Matter")
+  const activeParameters = preferences
+    ? parameterConfigs.filter((param) => preferences.priorityOrder[param.key] !== 3)
+    : [];
+
+  // Filter data: start from now (or next forecast) and end at midnight 5 days from now
+  const now = new Date();
+  const endTime = getMidnightFiveDaysLater(now);
+
+  const filteredScores = scores.filter((score) => {
+    const scoreTime = new Date(score.timestamp);
+    return scoreTime >= now && scoreTime <= endTime;
+  });
+
+  // If all scores are in the past, show the last available data
+  const displayScores = filteredScores.length > 0 ? filteredScores : scores.slice(-48);
+
+  // Transform data for the chart
+  const chartData: ChartDataPoint[] = displayScores.map((score, index) => ({
+    index,
+    score: score.score,
+    timestamp: score.timestamp,
+    temperature: score.weatherData.temperature,
+    humidity: score.weatherData.humidity,
+    windSpeed: score.weatherData.windSpeed,
+    precipitationChance: score.weatherData.precipitationChance,
+    cloudCover: score.weatherData.cloudCover,
+    shortForecast: score.weatherData.shortForecast,
+    // Add individual parameter scores
+    temperatureScore: score.breakdown.temperature,
+    humidityScore: score.breakdown.humidity,
+    windScore: score.breakdown.wind,
+    rainScore: score.breakdown.rain,
+    cloudCoverScore: score.breakdown.cloudCover,
+  }));
+
+  // Find day boundaries (midnight points) for vertical separators
+  const dayBoundaries: Array<{ index: number; label: string }> = [];
+  chartData.forEach((point, index) => {
+    const date = new Date(point.timestamp);
+    if (date.getHours() === 0) {
+      dayBoundaries.push({
+        index,
+        label: formatDayLabel(point.timestamp),
+      });
+    }
+  });
+
+  // Get tick positions: show ticks at every day boundary
+  const ticks: number[] = dayBoundaries.map((b) => b.index);
+
+  // If no day boundaries yet (first day), add first index
+  if (ticks.length === 0 && chartData.length > 0) {
+    ticks.push(0);
+  }
+
+  const timeRangeDays = Math.ceil((displayScores.length || 1) / 24);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Sky Score Forecast</CardTitle>
+        <CardDescription>
+          {locationName && `${locationName} • `}
+          {timeRangeDays}-day hourly forecast ({displayScores.length} hours)
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[400px] w-full bg-muted/20 rounded-md p-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis
+                dataKey="index"
+                ticks={ticks}
+                tickFormatter={(index) => {
+                  const item = chartData[index];
+                  return item ? formatXAxisLabel(item.timestamp) : "";
+                }}
+                className="text-xs"
+              />
+              <YAxis domain={[0, 100]} width={30} className="text-xs" />
+              <Tooltip content={<CustomTooltip />} />
+
+              {/* Day boundary separators */}
+              {dayBoundaries.map((boundary) => (
+                <ReferenceLine
+                  key={`day-${boundary.index}`}
+                  x={boundary.index}
+                  stroke="hsl(210, 20%, 60%)"
+                  strokeWidth={1.5}
+                  strokeOpacity={0.5}
+                  label={{
+                    value: boundary.label,
+                    position: "top",
+                    fill: "hsl(210, 10%, 50%)",
+                    fontSize: 11,
+                  }}
+                />
+              ))}
+
+              {/* Individual parameter lines (partially transparent unless hovered) */}
+              {activeParameters.map((param) => (
+                <Line
+                  key={param.dataKey}
+                  type="monotone"
+                  dataKey={param.dataKey}
+                  stroke={param.color}
+                  strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
+                  strokeOpacity={
+                    hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05
+                  }
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                  onMouseEnter={() => setHoveredLine(param.dataKey)}
+                  onMouseLeave={() => setHoveredLine(null)}
+                />
+              ))}
+
+              {/* Sky Score line (main line, highlighted by default) */}
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="hsl(210, 100%, 50%)"
+                strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
+                strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+                dot={false}
+                activeDot={{ r: 6 }}
+                onMouseEnter={() => setHoveredLine("score")}
+                onMouseLeave={() => setHoveredLine(null)}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Legend */}
+        {activeParameters.length > 0 && (
+          <div className="flex items-center justify-center gap-4 mt-3 text-xs flex-wrap">
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onMouseEnter={() => setHoveredLine("score")}
+              onMouseLeave={() => setHoveredLine(null)}
+            >
+              <div
+                className="w-8 h-0.5 rounded-full"
+                style={{
+                  backgroundColor: "hsl(210, 100%, 50%)",
+                  opacity: hoveredLine === null || hoveredLine === "score" ? 1 : 0.3,
+                }}
+              />
+              <span className={hoveredLine === "score" ? "font-semibold" : ""}>Sky Score</span>
+            </div>
+            {activeParameters.map((param) => (
+              <div
+                key={param.dataKey}
+                className="flex items-center gap-2 cursor-pointer"
+                onMouseEnter={() => setHoveredLine(param.dataKey)}
+                onMouseLeave={() => setHoveredLine(null)}
+              >
+                <div
+                  className="w-8 h-0.5 rounded-full"
+                  style={{
+                    backgroundColor: param.color,
+                    opacity:
+                      hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05,
+                  }}
+                />
+                <span className={hoveredLine === param.dataKey ? "font-semibold" : ""}>
+                  {param.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
