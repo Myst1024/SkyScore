@@ -3,7 +3,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ReferenceLine,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -34,6 +34,7 @@ interface ChartDataPoint {
   windSpeed: number;
   precipitationChance: number;
   cloudCover: number;
+  isDaytime: boolean;
   shortForecast?: string;
   // Individual parameter scores
   temperatureScore: number;
@@ -214,6 +215,7 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
     windSpeed: score.weatherData.windSpeed,
     precipitationChance: score.weatherData.precipitationChance,
     cloudCover: score.weatherData.cloudCover,
+    isDaytime: score.weatherData.isDaytime,
     shortForecast: score.weatherData.shortForecast,
     // Add individual parameter scores
     temperatureScore: score.breakdown.temperature,
@@ -243,6 +245,26 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
     ticks.push(0);
   }
 
+  // Find nighttime periods for shading
+  const nighttimePeriods: Array<{ start: number; end: number }> = [];
+  let nightStart: number | null = null;
+
+  chartData.forEach((point, index) => {
+    if (!point.isDaytime && nightStart === null) {
+      // Start of nighttime period
+      nightStart = index;
+    } else if (point.isDaytime && nightStart !== null) {
+      // End of nighttime period
+      nighttimePeriods.push({ start: nightStart, end: index - 1 });
+      nightStart = null;
+    }
+  });
+
+  // If still in nighttime at the end, close the period
+  if (nightStart !== null) {
+    nighttimePeriods.push({ start: nightStart, end: chartData.length - 1 });
+  }
+
   const timeRangeDays = Math.ceil((displayScores.length || 1) / 24);
 
   return (
@@ -257,7 +279,7 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="index"
               ticks={ticks}
@@ -270,14 +292,15 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
             <YAxis domain={[0, 100]} width={30} tick={{ fontSize: 12 }} />
             <Tooltip content={<CustomTooltip />} />
 
-            {/* Day boundary separators */}
-            {dayBoundaries.map((boundary) => (
-              <ReferenceLine
-                key={`day-${boundary.index}`}
-                x={boundary.index}
-                stroke="hsl(210, 20%, 60%)"
-                strokeWidth={1.5}
-                strokeOpacity={0.5}
+            {/* Nighttime shading */}
+            {nighttimePeriods.map((period) => (
+              <ReferenceArea
+                key={`night-${period.start}-${period.end}`}
+                x1={period.start}
+                x2={period.end}
+                fill="hsl(220, 30%, 20%)"
+                fillOpacity={0.15}
+                strokeOpacity={0}
               />
             ))}
 

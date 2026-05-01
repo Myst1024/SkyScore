@@ -31,6 +31,7 @@ export interface HourlyWeatherData {
   windSpeed: number; // mph
   precipitationChance: number; // percentage (0-100)
   cloudCover: number; // percentage (0-100)
+  isDaytime: boolean; // true if during daylight hours
   shortForecast?: string; // e.g., "Partly Cloudy"
 }
 

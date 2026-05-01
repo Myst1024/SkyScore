@@ -158,8 +158,8 @@ function createGridDataMaps(gridData: NOAAGridDataResponse): {
         const timestamp = new Date(startTime);
         timestamp.setHours(timestamp.getHours() + i);
         const isoString = timestamp.toISOString();
-        // Convert from m/s to mph (NOAA grid uses m/s, we want mph)
-        const windSpeedMph = dataPoint.value * 2.23694;
+        // Convert from km/h to mph (NOAA grid data returns km/h, we want mph)
+        const windSpeedMph = dataPoint.value * 0.621371;
         windSpeedMap.set(isoString, Math.round(windSpeedMph));
       }
     }
@@ -188,6 +188,7 @@ export function parseWeatherData(
       windSpeed: gridMaps?.windSpeed.get(periodTimeUTC) ?? 0,
       precipitationChance: period.probabilityOfPrecipitation?.value ?? 0,
       cloudCover: gridMaps?.skyCover.get(periodTimeUTC) ?? 50,
+      isDaytime: period.isDaytime,
       shortForecast: period.shortForecast,
     };
 
