@@ -144,15 +144,13 @@ export function App() {
             : undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-background dark:from-sky-950 dark:to-background">
+    <div className="min-h-screen bg-slate-950">
       <div className="container mx-auto p-4 md:p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2 py-6">
           <div className="flex items-center justify-center gap-3">
             <Cloud className="h-12 w-12 text-sky-500" />
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
-              Sky Score
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-sky-500">Sky Score</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover how perfectly the weather matches your preferences over the next 5 days
@@ -222,9 +220,9 @@ export function App() {
         {/* Empty State */}
         {!loading && !forecastData && !error && (
           <div className="text-center py-12 space-y-4">
-            <Cloud className="h-24 w-24 mx-auto text-muted-foreground/20" />
+            <Cloud className="h-24 w-24 mx-auto text-muted-foreground/40" />
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-muted-foreground">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Ready to Check Your Sky Score?
               </h2>
               <p className="text-muted-foreground max-w-md mx-auto">

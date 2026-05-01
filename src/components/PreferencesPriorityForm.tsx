@@ -117,38 +117,38 @@ interface SortableParameterItemProps {
   config: ParameterConfig;
   value: [number, number];
   onChange: (value: [number, number]) => void;
-  isDragging?: boolean;
 }
 
-function SortableParameterItem({
-  parameter,
-  config,
-  value,
-  onChange,
-  isDragging = false,
-}: SortableParameterItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+function SortableParameterItem({ parameter, config, value, onChange }: SortableParameterItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isBeingDragged,
+  } = useSortable({
     id: parameter,
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isBeingDragged ? 0.4 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="bg-background border rounded-lg p-3 space-y-2">
+    <div ref={setNodeRef} style={style} className="bg-background border rounded-lg p-3">
       <div className="flex items-center gap-2">
-        <button
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+        <div
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
           {...attributes}
           {...listeners}
         >
           <GripVertical className="h-5 w-5" />
-        </button>
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
+        </div>
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">{config.label}</Label>
             <span className="text-xs text-muted-foreground">
               {value[0]}
@@ -225,11 +225,8 @@ function DroppableSection({ section, children, isEmpty }: DroppableSectionProps)
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold">{sectionInfo.label}</h3>
-        <span className="text-xs font-mono bg-background/50 px-2 py-1 rounded">
-          {sectionInfo.weight} weight
-        </span>
       </div>
-      <div className="space-y-2 min-h-[60px]">
+      <div className="flex flex-col gap-2 min-h-[60px]">
         {isEmpty ? (
           <div className="text-xs text-muted-foreground text-center py-4 border-2 border-dashed rounded">
             Drag parameters here
@@ -456,7 +453,7 @@ export function PreferencesPriorityForm({
               return (
                 <DroppableSection key={section} section={section} isEmpty={isEmpty}>
                   {!isEmpty && (
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       {sectionParams.map((param) => {
                         const config = PARAMETER_CONFIGS[param];
                         return (
@@ -466,7 +463,6 @@ export function PreferencesPriorityForm({
                             config={config}
                             value={[localPrefs[param].min, localPrefs[param].max]}
                             onChange={(value) => handleRangeChange(param, value)}
-                            isDragging={activeParam === param}
                           />
                         );
                       })}
