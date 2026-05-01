@@ -121,15 +121,25 @@ export function calculateScoreForHour(
     preferences.cloudCover.min === 0,
   );
 
+  // UV Index: treat 0 as ideal if min is 0
+  const uvScore = calculateParameterScore(
+    weatherData.uvIndex,
+    preferences.uvIndex.min,
+    preferences.uvIndex.max,
+    preferences.uvIndex.min === 0,
+  );
+
   // Calculate effective weights based on priority sections
   const tempWeight = getParameterWeight("temperature", preferences);
   const rainWeight = getParameterWeight("rain", preferences);
   const windWeight = getParameterWeight("wind", preferences);
   const humidityWeight = getParameterWeight("humidity", preferences);
   const cloudWeight = getParameterWeight("cloudCover", preferences);
+  const uvWeight = getParameterWeight("uvIndex", preferences);
 
   // Calculate total weight for normalization
-  const totalWeight = tempWeight + rainWeight + windWeight + humidityWeight + cloudWeight;
+  const totalWeight =
+    tempWeight + rainWeight + windWeight + humidityWeight + cloudWeight + uvWeight;
 
   // Calculate weighted total score and normalize
   const weightedScore =
@@ -137,7 +147,8 @@ export function calculateScoreForHour(
     rainScore * rainWeight +
     windScore * windWeight +
     humidityScore * humidityWeight +
-    cloudScore * cloudWeight;
+    cloudScore * cloudWeight +
+    uvScore * uvWeight;
 
   const normalizedScore = weightedScore / totalWeight;
 
@@ -150,6 +161,7 @@ export function calculateScoreForHour(
       wind: Math.round(windScore),
       rain: Math.round(rainScore),
       cloudCover: Math.round(cloudScore),
+      uvIndex: Math.round(uvScore),
     },
     weatherData,
   };
@@ -175,17 +187,19 @@ export function getDefaultPreferences(): WeatherPreferences {
     wind: { min: 0, max: 15 },
     rain: { min: 0, max: 20 },
     cloudCover: { min: 0, max: 70 },
+    uvIndex: { min: 0, max: 7 },
     priorityOrder: {
       temperature: 0, // Highest Priority
       rain: 0, // Highest Priority
       wind: 1, // High Priority
       humidity: 2, // Medium Priority
       cloudCover: 2, // Medium Priority
+      uvIndex: 2, // Medium Priority
     },
     sectionOrder: {
       0: ["temperature", "rain"],
       1: ["wind"],
-      2: ["humidity", "cloudCover"],
+      2: ["humidity", "cloudCover", "uvIndex"],
       3: [],
     },
   };

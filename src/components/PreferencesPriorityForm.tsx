@@ -87,6 +87,15 @@ const PARAMETER_CONFIGS: Record<WeatherParameter, ParameterConfig> = {
     step: 5,
     unit: "%",
   },
+  uvIndex: {
+    id: "uvIndex",
+    label: "UV Index",
+    description: "Your ideal UV index range",
+    min: 0,
+    max: 11,
+    step: 1,
+    unit: "",
+  },
 };
 
 const SECTION_INFO: Record<PrioritySection, { label: string; color: string }> = {

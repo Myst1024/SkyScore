@@ -7,7 +7,15 @@ import { PreferencesPriorityForm } from "./components/PreferencesPriorityForm";
 import { isValidUSLocation } from "./lib/geocoding-utils";
 import { getForecastForLocation } from "./lib/noaa-service";
 import { calculateAllScores, getDefaultPreferences } from "./lib/scoring-algorithm";
-import type { ForecastData, Location, SkyScore, WeatherPreferences } from "./lib/types";
+import type {
+  ForecastData,
+  Location,
+  PrioritySection,
+  SkyScore,
+  WeatherParameter,
+  WeatherPreferenceRange,
+  WeatherPreferences,
+} from "./lib/types";
 import "./index.css";
 
 const STORAGE_KEY_PREFERENCES = "skyscore_preferences";
@@ -19,7 +27,56 @@ function loadPreferences(): WeatherPreferences {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_PREFERENCES);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      const defaults = getDefaultPreferences();
+
+      // Merge preference ranges: keep user's existing values, add new ones from defaults
+      const mergedRanges: Partial<Record<WeatherParameter, WeatherPreferenceRange>> = {};
+      for (const param of Object.keys(defaults) as Array<keyof typeof defaults>) {
+        if (param !== "priorityOrder" && param !== "sectionOrder") {
+          mergedRanges[param as WeatherParameter] = parsed[param] ?? defaults[param];
+        }
+      }
+
+      // Merge priorityOrder: keep user's existing, add new parameters from defaults
+      const mergedPriorityOrder: Record<WeatherParameter, PrioritySection> = {
+        ...defaults.priorityOrder,
+        ...parsed.priorityOrder,
+      };
+
+      // Merge sectionOrder: reconstruct sections with user's order plus new parameters
+      const mergedSectionOrder: Record<PrioritySection, WeatherParameter[]> = {
+        0: [],
+        1: [],
+        2: [],
+        3: [],
+      };
+
+      // First, preserve user's existing arrangement
+      if (parsed.sectionOrder) {
+        for (const section of [0, 1, 2, 3] as PrioritySection[]) {
+          if (Array.isArray(parsed.sectionOrder[section])) {
+            mergedSectionOrder[section] = [...parsed.sectionOrder[section]];
+          }
+        }
+      }
+
+      // Then, add any new parameters to their default sections
+      const allParamsInSections = new Set(
+        Object.values(mergedSectionOrder).flat() as WeatherParameter[],
+      );
+      for (const param of Object.keys(mergedPriorityOrder) as WeatherParameter[]) {
+        if (!allParamsInSections.has(param)) {
+          const section = mergedPriorityOrder[param];
+          mergedSectionOrder[section].push(param);
+        }
+      }
+
+      return {
+        ...(mergedRanges as Record<WeatherParameter, WeatherPreferenceRange>),
+        priorityOrder: mergedPriorityOrder,
+        sectionOrder: mergedSectionOrder,
+      } as WeatherPreferences;
     }
   } catch (err) {
     console.error("Failed to load preferences from localStorage:", err);
