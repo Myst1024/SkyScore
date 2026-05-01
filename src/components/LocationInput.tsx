@@ -1,5 +1,5 @@
 import { Loader2, MapPin } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getCoordinatesFromZipCode, getLocationFromBrowser } from "@/lib/geocoding-utils";
 import type { Location } from "@/lib/types";
 import { Button } from "./ui/button";
@@ -7,18 +7,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
+const STORAGE_KEY_ZIPCODE = "skyscore_zipcode";
+const STORAGE_KEY_LOCATION_PERMISSION = "skyscore_location_permission";
+
 interface LocationInputProps {
   onLocationChange: (location: Location) => void;
   isLoading?: boolean;
+  onAutoFetch?: (type: "zipcode" | "geolocation") => void;
 }
 
-export function LocationInput({ onLocationChange, isLoading = false }: LocationInputProps) {
+export function LocationInput({ onLocationChange, isLoading = false, onAutoFetch }: LocationInputProps) {
   const [zipCode, setZipCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
 
-  const handleZipSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Load saved zipcode on mount
+  useEffect(() => {
+    const savedZipCode = localStorage.getItem(STORAGE_KEY_ZIPCODE);
+    if (savedZipCode) {
+      setZipCode(savedZipCode);
+    }
+  }, []);
+
+  const handleZipSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     setError(null);
 
     if (!zipCode.trim()) {
@@ -33,6 +47,11 @@ export function LocationInput({ onLocationChange, isLoading = false }: LocationI
       return;
     }
 
+    // Save zipcode to localStorage
+    localStorage.setItem(STORAGE_KEY_ZIPCODE, zipCode);
+    // Clear location permission since user manually entered zipcode
+    localStorage.removeItem(STORAGE_KEY_LOCATION_PERMISSION);
+
     onLocationChange(location);
   };
 
@@ -42,6 +61,11 @@ export function LocationInput({ onLocationChange, isLoading = false }: LocationI
 
     try {
       const location = await getLocationFromBrowser();
+      // Save permission granted flag to localStorage
+      localStorage.setItem(STORAGE_KEY_LOCATION_PERMISSION, "granted");
+      // Clear saved zipcode since user is using geolocation
+      localStorage.removeItem(STORAGE_KEY_ZIPCODE);
+      setZipCode("");
       onLocationChange(location);
     } catch (err) {
       const errorMessage =
@@ -53,6 +77,21 @@ export function LocationInput({ onLocationChange, isLoading = false }: LocationI
       setGeoLoading(false);
     }
   };
+
+  // Auto-fetch on mount if we have saved preferences
+  useEffect(() => {
+    if (!onAutoFetch) return;
+
+    const locationPermission = localStorage.getItem(STORAGE_KEY_LOCATION_PERMISSION);
+    const savedZipCode = localStorage.getItem(STORAGE_KEY_ZIPCODE);
+
+    // Priority: geolocation permission over saved zipcode
+    if (locationPermission === "granted") {
+      onAutoFetch("geolocation");
+    } else if (savedZipCode) {
+      onAutoFetch("zipcode");
+    }
+  }, [onAutoFetch]);
 
   return (
     <Card>

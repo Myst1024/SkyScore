@@ -17,6 +17,7 @@ export function App() {
   const [scores, setScores] = useState<SkyScore[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoFetched, setHasAutoFetched] = useState(false);
 
   // Fetch forecast when location changes
   const handleLocationChange = async (newLocation: Location) => {
@@ -58,6 +59,32 @@ export function App() {
     }
   };
 
+  // Auto-fetch forecast on mount based on saved preferences
+  const handleAutoFetch = async (type: "zipcode" | "geolocation") => {
+    if (hasAutoFetched) return;
+    setHasAutoFetched(true);
+    
+    try {
+      if (type === "geolocation") {
+        const { getLocationFromBrowser } = await import("./lib/geocoding-utils");
+        const location = await getLocationFromBrowser();
+        await handleLocationChange(location);
+      } else if (type === "zipcode") {
+        const savedZipCode = localStorage.getItem("skyscore_zipcode");
+        if (savedZipCode) {
+          const { getCoordinatesFromZipCode } = await import("./lib/geocoding-utils");
+          const location = getCoordinatesFromZipCode(savedZipCode);
+          if (location) {
+            await handleLocationChange(location);
+          }
+        }
+      }
+    } catch (err) {
+      // Silently fail auto-fetch - user can manually trigger if needed
+      console.error("Auto-fetch failed:", err);
+    }
+  };
+
   // Recalculate scores when preferences change
   useEffect(() => {
     if (forecastData) {
@@ -89,7 +116,11 @@ export function App() {
         </div>
 
         {/* Location Input */}
-        <LocationInput onLocationChange={handleLocationChange} isLoading={loading} />
+        <LocationInput 
+          onLocationChange={handleLocationChange} 
+          isLoading={loading} 
+          onAutoFetch={handleAutoFetch}
+        />
 
         {/* Error Display */}
         {error && (
