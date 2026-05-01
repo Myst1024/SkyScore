@@ -10,9 +10,37 @@ import { calculateAllScores, getDefaultPreferences } from "./lib/scoring-algorit
 import type { ForecastData, Location, SkyScore, WeatherPreferences } from "./lib/types";
 import "./index.css";
 
+const STORAGE_KEY_PREFERENCES = "skyscore_preferences";
+
+/**
+ * Load preferences from localStorage, or return defaults if not found
+ */
+function loadPreferences(): WeatherPreferences {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_PREFERENCES);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (err) {
+    console.error("Failed to load preferences from localStorage:", err);
+  }
+  return getDefaultPreferences();
+}
+
+/**
+ * Save preferences to localStorage
+ */
+function savePreferences(preferences: WeatherPreferences): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFERENCES, JSON.stringify(preferences));
+  } catch (err) {
+    console.error("Failed to save preferences to localStorage:", err);
+  }
+}
+
 export function App() {
   const [location, setLocation] = useState<Location | null>(null);
-  const [preferences, setPreferences] = useState<WeatherPreferences>(getDefaultPreferences());
+  const [preferences, setPreferences] = useState<WeatherPreferences>(loadPreferences());
   const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [scores, setScores] = useState<SkyScore[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,6 +118,11 @@ export function App() {
       console.error("Auto-fetch failed:", err);
     }
   };
+
+  // Save preferences to localStorage whenever they change
+  useEffect(() => {
+    savePreferences(preferences);
+  }, [preferences]);
 
   // Recalculate scores when preferences change
   useEffect(() => {

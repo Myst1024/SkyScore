@@ -1,8 +1,8 @@
-import { BarChart3, Calendar, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { formatTooltipTime, getScoreColor, getScoreDescription } from "@/lib/chart-utils";
-import { calculateScoreStats, getScoresByDay } from "@/lib/scoring-algorithm";
+import { calculateScoreStats } from "@/lib/scoring-algorithm";
 import type { SkyScore } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface ForecastSummaryProps {
   scores: SkyScore[];
@@ -14,7 +14,6 @@ export function ForecastSummary({ scores }: ForecastSummaryProps) {
   }
 
   const stats = calculateScoreStats(scores);
-  const dailyStats = getScoresByDay(scores);
 
   return (
     <div className="space-y-6">
@@ -65,48 +64,6 @@ export function ForecastSummary({ scores }: ForecastSummaryProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Daily Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Daily Breakdown
-          </CardTitle>
-          <CardDescription>Sky Score range for each day</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {dailyStats.map((day) => (
-              <div key={day.date} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{day.date}</span>
-                  <span className="text-sm text-muted-foreground">{day.count} hours</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full transition-all"
-                      style={{
-                        width: `${day.average}%`,
-                        backgroundColor: getScoreColor(day.average),
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs min-w-[120px]">
-                    <span className="font-medium" style={{ color: getScoreColor(day.average) }}>
-                      Avg: {day.average}
-                    </span>
-                    <span className="text-muted-foreground">
-                      ({day.min}-{day.max})
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Score Distribution Info */}
       <Card>

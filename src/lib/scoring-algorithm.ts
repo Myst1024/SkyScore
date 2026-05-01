@@ -170,11 +170,11 @@ export function calculateAllScores(
  */
 export function getDefaultPreferences(): WeatherPreferences {
   return {
-    temperature: { min: 65, max: 75 },
-    humidity: { min: 30, max: 60 },
-    wind: { min: 0, max: 10 },
+    temperature: { min: 60, max: 90 },
+    humidity: { min: 20, max: 70 },
+    wind: { min: 0, max: 15 },
     rain: { min: 0, max: 20 },
-    cloudCover: { min: 0, max: 30 },
+    cloudCover: { min: 0, max: 70 },
     priorityOrder: {
       temperature: 0, // Highest Priority
       rain: 0, // Highest Priority
@@ -231,36 +231,4 @@ export function calculateScoreStats(scores: SkyScore[]) {
       index: worstIndex,
     },
   };
-}
-
-/**
- * Group scores by day and calculate daily stats
- */
-export function getScoresByDay(scores: SkyScore[]) {
-  const dayGroups = new Map<string, SkyScore[]>();
-
-  scores.forEach((score) => {
-    const date = new Date(score.timestamp).toLocaleDateString();
-    if (!dayGroups.has(date)) {
-      dayGroups.set(date, []);
-    }
-    dayGroups.get(date)!.push(score);
-  });
-
-  const dailyStats = Array.from(dayGroups.entries()).map(([date, dayScores]) => {
-    const scores = dayScores.map((s) => s.score);
-    const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-
-    return {
-      date,
-      average: Math.round(avg),
-      min,
-      max,
-      count: dayScores.length,
-    };
-  });
-
-  return dailyStats;
 }
