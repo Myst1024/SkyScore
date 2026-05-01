@@ -60,8 +60,8 @@ function calculateParameterScore(
   if (value < min) {
     const range = max - min;
     const distance = min - value;
-    // Allow some tolerance: score decays to 0 at 2x range below minimum
-    const tolerance = range * 2;
+    // Aggressive penalty: score decays to 0 at 1x range below minimum
+    const tolerance = range * 1;
     const score = Math.max(0, 100 * (1 - distance / tolerance));
     return score;
   }
@@ -70,8 +70,8 @@ function calculateParameterScore(
   if (value > max) {
     const range = max - min;
     const distance = value - max;
-    // Allow some tolerance: score decays to 0 at 2x range above maximum
-    const tolerance = range * 2;
+    // Aggressive penalty: score decays to 0 at 1x range above maximum
+    const tolerance = range * 1;
     const score = Math.max(0, 100 * (1 - distance / tolerance));
     return score;
   }
