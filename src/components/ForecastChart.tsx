@@ -12,7 +12,6 @@ import {
 import {
   formatDayLabel,
   formatTooltipTime,
-  formatXAxisLabel,
   getMidnightFiveDaysLater,
   getScoreColor,
   getScoreDescription,
@@ -256,72 +255,64 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px] w-full bg-muted/20 rounded-md p-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="index"
-                ticks={ticks}
-                tickFormatter={(index) => {
-                  const item = chartData[index];
-                  return item ? formatXAxisLabel(item.timestamp) : "";
-                }}
-                className="text-xs"
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="index"
+              ticks={ticks}
+              tickFormatter={(index) => {
+                const item = chartData[index];
+                return item ? formatDayLabel(item.timestamp) : "";
+              }}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis domain={[0, 100]} width={30} tick={{ fontSize: 12 }} />
+            <Tooltip content={<CustomTooltip />} />
+
+            {/* Day boundary separators */}
+            {dayBoundaries.map((boundary) => (
+              <ReferenceLine
+                key={`day-${boundary.index}`}
+                x={boundary.index}
+                stroke="hsl(210, 20%, 60%)"
+                strokeWidth={1.5}
+                strokeOpacity={0.5}
               />
-              <YAxis domain={[0, 100]} width={30} className="text-xs" />
-              <Tooltip content={<CustomTooltip />} />
+            ))}
 
-              {/* Day boundary separators */}
-              {dayBoundaries.map((boundary) => (
-                <ReferenceLine
-                  key={`day-${boundary.index}`}
-                  x={boundary.index}
-                  stroke="hsl(210, 20%, 60%)"
-                  strokeWidth={1.5}
-                  strokeOpacity={0.5}
-                  label={{
-                    value: boundary.label,
-                    position: "top",
-                    fill: "hsl(210, 10%, 50%)",
-                    fontSize: 11,
-                  }}
-                />
-              ))}
-
-              {/* Individual parameter lines (partially transparent unless hovered) */}
-              {activeParameters.map((param) => (
-                <Line
-                  key={param.dataKey}
-                  type="monotone"
-                  dataKey={param.dataKey}
-                  stroke={param.color}
-                  strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
-                  strokeOpacity={
-                    hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05
-                  }
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  onMouseEnter={() => setHoveredLine(param.dataKey)}
-                  onMouseLeave={() => setHoveredLine(null)}
-                />
-              ))}
-
-              {/* Sky Score line (main line, highlighted by default) */}
+            {/* Individual parameter lines (partially transparent unless hovered) */}
+            {activeParameters.map((param) => (
               <Line
+                key={param.dataKey}
                 type="monotone"
-                dataKey="score"
-                stroke="hsl(210, 100%, 50%)"
-                strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
-                strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+                dataKey={param.dataKey}
+                stroke={param.color}
+                strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
+                strokeOpacity={
+                  hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05
+                }
                 dot={false}
-                activeDot={{ r: 6 }}
-                onMouseEnter={() => setHoveredLine("score")}
+                activeDot={{ r: 4 }}
+                onMouseEnter={() => setHoveredLine(param.dataKey)}
                 onMouseLeave={() => setHoveredLine(null)}
               />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            ))}
+
+            {/* Sky Score line (main line, highlighted by default) */}
+            <Line
+              type="monotone"
+              dataKey="score"
+              stroke="hsl(210, 100%, 50%)"
+              strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
+              strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+              dot={false}
+              activeDot={{ r: 6 }}
+              onMouseEnter={() => setHoveredLine("score")}
+              onMouseLeave={() => setHoveredLine(null)}
+            />
+          </LineChart>
+        </ResponsiveContainer>
 
         {/* Legend */}
         {activeParameters.length > 0 && (
