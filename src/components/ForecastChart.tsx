@@ -21,7 +21,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 
 interface ForecastChartProps {
   scores: SkyScore[];
-  locationName?: string;
   preferences?: WeatherPreferences;
 }
 
@@ -150,7 +149,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export function ForecastChart({ scores, locationName, preferences }: ForecastChartProps) {
+export function ForecastChart({ scores, preferences }: ForecastChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
   if (scores.length === 0) {
@@ -265,16 +264,10 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
     nighttimePeriods.push({ start: nightStart, end: chartData.length - 1 });
   }
 
-  const timeRangeDays = Math.ceil((displayScores.length || 1) / 24);
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sky Score Forecast</CardTitle>
-        <CardDescription>
-          {locationName && `${locationName} • `}
-          {timeRangeDays}-day hourly forecast ({displayScores.length} hours)
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>

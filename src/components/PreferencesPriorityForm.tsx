@@ -89,25 +89,21 @@ const PARAMETER_CONFIGS: Record<WeatherParameter, ParameterConfig> = {
   },
 };
 
-const SECTION_INFO: Record<PrioritySection, { label: string; weight: string; color: string }> = {
+const SECTION_INFO: Record<PrioritySection, { label: string; color: string }> = {
   0: {
     label: "Highest Priority",
-    weight: "2.0x",
     color: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900",
   },
   1: {
     label: "High Priority",
-    weight: "1.0x",
     color: "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900",
   },
   2: {
     label: "Medium Priority",
-    weight: "0.4x",
     color: "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-900",
   },
   3: {
     label: "Doesn't Matter",
-    weight: "0x",
     color: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900",
   },
 };
@@ -117,30 +113,31 @@ interface SortableParameterItemProps {
   config: ParameterConfig;
   value: [number, number];
   onChange: (value: [number, number]) => void;
-  isDragging?: boolean;
 }
 
-function SortableParameterItem({
-  parameter,
-  config,
-  value,
-  onChange,
-  isDragging = false,
-}: SortableParameterItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+function SortableParameterItem({ parameter, config, value, onChange }: SortableParameterItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isBeingDragged,
+  } = useSortable({
     id: parameter,
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isBeingDragged ? 0.4 : 1,
   };
 
   return (
     <div ref={setNodeRef} style={style} className="bg-background border rounded-lg p-3 space-y-2">
       <div className="flex items-center gap-2">
         <button
+          type="button"
           className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
           {...attributes}
           {...listeners}
@@ -225,9 +222,6 @@ function DroppableSection({ section, children, isEmpty }: DroppableSectionProps)
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold">{sectionInfo.label}</h3>
-        <span className="text-xs font-mono bg-background/50 px-2 py-1 rounded">
-          {sectionInfo.weight} weight
-        </span>
       </div>
       <div className="space-y-2 min-h-[60px]">
         {isEmpty ? (
@@ -466,7 +460,6 @@ export function PreferencesPriorityForm({
                             config={config}
                             value={[localPrefs[param].min, localPrefs[param].max]}
                             onChange={(value) => handleRangeChange(param, value)}
-                            isDragging={activeParam === param}
                           />
                         );
                       })}

@@ -144,7 +144,7 @@ export function App() {
             : undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-background dark:from-sky-950 dark:to-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto p-4 md:p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2 py-6">
@@ -209,11 +209,7 @@ export function App() {
 
             {/* Right Column - Chart and Summary */}
             <div className="lg:col-span-2 space-y-6">
-              <ForecastChart
-                scores={scores}
-                locationName={locationName}
-                preferences={preferences}
-              />
+              <ForecastChart scores={scores} preferences={preferences} />
               <ForecastSummary scores={scores} />
             </div>
           </div>
