@@ -277,72 +277,65 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="bg-slate-50/95 dark:bg-slate-900/30 rounded-lg p-5 border border-slate-200/60 dark:border-slate-700/40">
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#94a3b8"
-                opacity={0.4}
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="index"
+              ticks={ticks}
+              tickFormatter={(index) => {
+                const item = chartData[index];
+                return item ? formatDayLabel(item.timestamp) : "";
+              }}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis domain={[0, 100]} width={30} tick={{ fontSize: 12 }} />
+            <Tooltip content={<CustomTooltip />} />
+
+            {/* Nighttime shading */}
+            {nighttimePeriods.map((period) => (
+              <ReferenceArea
+                key={`night-${period.start}-${period.end}`}
+                x1={period.start}
+                x2={period.end}
+                fill="hsl(220, 30%, 20%)"
+                fillOpacity={0.15}
+                strokeOpacity={0}
               />
-              <XAxis
-                dataKey="index"
-                ticks={ticks}
-                tickFormatter={(index) => {
-                  const item = chartData[index];
-                  return item ? formatDayLabel(item.timestamp) : "";
-                }}
-                tick={{ fontSize: 12, fill: "#64748b" }}
-              />
-              <YAxis domain={[0, 100]} width={30} tick={{ fontSize: 12, fill: "#64748b" }} />
-              <Tooltip content={<CustomTooltip />} />
+            ))}
 
-              {/* Nighttime shading */}
-              {nighttimePeriods.map((period) => (
-                <ReferenceArea
-                  key={`night-${period.start}-${period.end}`}
-                  x1={period.start}
-                  x2={period.end}
-                  fill="hsl(220, 40%, 30%)"
-                  fillOpacity={0.1}
-                  strokeOpacity={0}
-                />
-              ))}
-
-              {/* Individual parameter lines (partially transparent unless hovered) */}
-              {activeParameters.map((param) => (
-                <Line
-                  key={param.dataKey}
-                  type="monotone"
-                  dataKey={param.dataKey}
-                  stroke={param.color}
-                  strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
-                  strokeOpacity={
-                    hoveredLine === null ? 0.3 : hoveredLine === param.dataKey ? 0.7 : 0.15
-                  }
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  onMouseEnter={() => setHoveredLine(param.dataKey)}
-                  onMouseLeave={() => setHoveredLine(null)}
-                />
-              ))}
-
-              {/* Sky Score line (main line, highlighted by default) */}
+            {/* Individual parameter lines (partially transparent unless hovered) */}
+            {activeParameters.map((param) => (
               <Line
+                key={param.dataKey}
                 type="monotone"
-                dataKey="score"
-                stroke="hsl(210, 100%, 50%)"
-                strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
-                strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+                dataKey={param.dataKey}
+                stroke={param.color}
+                strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
+                strokeOpacity={
+                  hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05
+                }
                 dot={false}
-                activeDot={{ r: 6 }}
-                onMouseEnter={() => setHoveredLine("score")}
+                activeDot={{ r: 4 }}
+                onMouseEnter={() => setHoveredLine(param.dataKey)}
                 onMouseLeave={() => setHoveredLine(null)}
               />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            ))}
+
+            {/* Sky Score line (main line, highlighted by default) */}
+            <Line
+              type="monotone"
+              dataKey="score"
+              stroke="hsl(210, 100%, 50%)"
+              strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
+              strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+              dot={false}
+              activeDot={{ r: 6 }}
+              onMouseEnter={() => setHoveredLine("score")}
+              onMouseLeave={() => setHoveredLine(null)}
+            />
+          </LineChart>
+        </ResponsiveContainer>
 
         {/* Legend */}
         {activeParameters.length > 0 && (
@@ -374,7 +367,8 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
                   className="w-8 h-0.5 rounded-full"
                   style={{
                     backgroundColor: param.color,
-                    opacity: hoveredLine === null ? 0.3 : hoveredLine === param.dataKey ? 1 : 0.15,
+                    opacity:
+                      hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05,
                   }}
                 />
                 <span className={hoveredLine === param.dataKey ? "font-semibold" : ""}>
