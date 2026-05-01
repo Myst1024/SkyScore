@@ -326,7 +326,8 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
         {/* Legend */}
         {activeParameters.length > 0 && (
           <div className="flex items-center justify-center gap-4 mt-3 text-xs flex-wrap">
-            <div
+            <button
+              type="button"
               className="flex items-center gap-2 cursor-pointer"
               onMouseEnter={() => setHoveredLine("score")}
               onMouseLeave={() => setHoveredLine(null)}
@@ -339,10 +340,11 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
                 }}
               />
               <span className={hoveredLine === "score" ? "font-semibold" : ""}>Sky Score</span>
-            </div>
+            </button>
             {activeParameters.map((param) => (
-              <div
+              <button
                 key={param.dataKey}
+                type="button"
                 className="flex items-center gap-2 cursor-pointer"
                 onMouseEnter={() => setHoveredLine(param.dataKey)}
                 onMouseLeave={() => setHoveredLine(null)}
@@ -358,7 +360,7 @@ export function ForecastChart({ scores, locationName, preferences }: ForecastCha
                 <span className={hoveredLine === param.dataKey ? "font-semibold" : ""}>
                   {param.label}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
