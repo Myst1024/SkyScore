@@ -224,12 +224,22 @@ export async function getForecastForLocation(
     // Step 5: Limit to 5 days (120 hours)
     const periods = allPeriods.slice(0, 120);
 
+    // Try to get city/state from various sources
+    const locationCity =
+      city ||
+      pointsData.properties.city ||
+      pointsData.properties.relativeLocation?.properties?.city;
+    const locationState =
+      state ||
+      pointsData.properties.state ||
+      pointsData.properties.relativeLocation?.properties?.state;
+
     return {
       location: {
         lat,
         lon,
-        city: city || pointsData.properties.city,
-        state: state || pointsData.properties.state,
+        city: locationCity,
+        state: locationState,
       },
       periods,
       fetchedAt: new Date().toISOString(),

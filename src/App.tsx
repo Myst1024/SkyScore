@@ -47,10 +47,10 @@ export function App() {
       // Calculate initial scores
       const calculatedScores = calculateAllScores(forecast.periods, preferences);
       setScores(calculatedScores);
-      
+
       // Scroll to location header after a brief delay to let DOM update
       setTimeout(() => {
-        locationHeaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        locationHeaderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     } catch (err) {
       const errorMessage =
@@ -69,7 +69,7 @@ export function App() {
   const handleAutoFetch = async (type: "zipcode" | "geolocation") => {
     if (hasAutoFetched) return;
     setHasAutoFetched(true);
-    
+
     try {
       if (type === "geolocation") {
         const { getLocationFromBrowser } = await import("./lib/geocoding-utils");
@@ -99,13 +99,16 @@ export function App() {
     }
   }, [preferences, forecastData]);
 
-  const locationName = forecastData?.location.city && forecastData?.location.state
-    ? `${forecastData.location.city}, ${forecastData.location.state}`
-    : location?.city && location?.state
-      ? `${location.city}, ${location.state}`
-      : location?.zipCode
-        ? `Zip ${location.zipCode}`
-        : undefined;
+  const locationName =
+    forecastData?.location.city && forecastData?.location.state
+      ? `${forecastData.location.city}, ${forecastData.location.state}`
+      : location?.city && location?.state
+        ? `${location.city}, ${location.state}`
+        : location?.zipCode
+          ? `Zip ${location.zipCode}`
+          : location
+            ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`
+            : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-background dark:from-sky-950 dark:to-background">
@@ -124,18 +127,15 @@ export function App() {
         </div>
 
         {/* Location Input */}
-        <LocationInput 
-          onLocationChange={handleLocationChange} 
-          isLoading={loading} 
+        <LocationInput
+          onLocationChange={handleLocationChange}
+          isLoading={loading}
           onAutoFetch={handleAutoFetch}
         />
 
         {/* Location Header - shown after forecast is loaded */}
         {locationName && forecastData && (
-          <div 
-            ref={locationHeaderRef}
-            className="flex items-center gap-3 py-4 border-b"
-          >
+          <div ref={locationHeaderRef} className="flex items-center gap-3 py-4 border-b">
             <MapPin className="h-6 w-6 text-sky-500" />
             <div>
               <h2 className="text-2xl font-bold">{locationName}</h2>

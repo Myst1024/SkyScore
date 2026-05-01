@@ -79,8 +79,14 @@ export interface NOAAPointsResponse {
     forecast: string; // URL to forecast endpoint
     forecastHourly: string; // URL to hourly forecast endpoint
     forecastGridData: string; // URL to grid data endpoint with detailed data
-    city: string;
-    state: string;
+    city?: string;
+    state?: string;
+    relativeLocation?: {
+      properties?: {
+        city?: string;
+        state?: string;
+      };
+    };
   };
 }
 

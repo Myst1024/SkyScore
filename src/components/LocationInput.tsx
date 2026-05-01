@@ -16,7 +16,11 @@ interface LocationInputProps {
   onAutoFetch?: (type: "zipcode" | "geolocation") => void;
 }
 
-export function LocationInput({ onLocationChange, isLoading = false, onAutoFetch }: LocationInputProps) {
+export function LocationInput({
+  onLocationChange,
+  isLoading = false,
+  onAutoFetch,
+}: LocationInputProps) {
   const [zipCode, setZipCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
