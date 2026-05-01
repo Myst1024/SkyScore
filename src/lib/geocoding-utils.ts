@@ -24,6 +24,8 @@ export function getCoordinatesFromZipCode(zipCode: string): Location | null {
     lon: zipData.longitude,
     source: "zip",
     zipCode: cleaned,
+    city: zipData.city,
+    state: zipData.state,
   };
 }
 

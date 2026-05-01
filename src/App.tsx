@@ -1,5 +1,5 @@
-import { AlertCircle, Cloud } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, Cloud, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ForecastChart } from "./components/ForecastChart";
 import { ForecastSummary } from "./components/ForecastSummary";
 import { LocationInput } from "./components/LocationInput";
@@ -18,6 +18,7 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAutoFetched, setHasAutoFetched] = useState(false);
+  const locationHeaderRef = useRef<HTMLDivElement>(null);
 
   // Fetch forecast when location changes
   const handleLocationChange = async (newLocation: Location) => {
@@ -37,8 +38,8 @@ export function App() {
       const forecast = await getForecastForLocation(
         newLocation.lat,
         newLocation.lon,
-        undefined,
-        undefined,
+        newLocation.city,
+        newLocation.state,
       );
 
       setForecastData(forecast);
@@ -46,6 +47,11 @@ export function App() {
       // Calculate initial scores
       const calculatedScores = calculateAllScores(forecast.periods, preferences);
       setScores(calculatedScores);
+      
+      // Scroll to location header after a brief delay to let DOM update
+      setTimeout(() => {
+        locationHeaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       const errorMessage =
         err && typeof err === "object" && "message" in err
@@ -93,11 +99,13 @@ export function App() {
     }
   }, [preferences, forecastData]);
 
-  const locationName = forecastData
+  const locationName = forecastData?.location.city && forecastData?.location.state
     ? `${forecastData.location.city}, ${forecastData.location.state}`
-    : location?.zipCode
-      ? `Zip ${location.zipCode}`
-      : undefined;
+    : location?.city && location?.state
+      ? `${location.city}, ${location.state}`
+      : location?.zipCode
+        ? `Zip ${location.zipCode}`
+        : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-background dark:from-sky-950 dark:to-background">
@@ -121,6 +129,20 @@ export function App() {
           isLoading={loading} 
           onAutoFetch={handleAutoFetch}
         />
+
+        {/* Location Header - shown after forecast is loaded */}
+        {locationName && forecastData && (
+          <div 
+            ref={locationHeaderRef}
+            className="flex items-center gap-3 py-4 border-b"
+          >
+            <MapPin className="h-6 w-6 text-sky-500" />
+            <div>
+              <h2 className="text-2xl font-bold">{locationName}</h2>
+              <p className="text-sm text-muted-foreground">5-Day Weather Forecast</p>
+            </div>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (

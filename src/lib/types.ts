@@ -66,6 +66,8 @@ export interface Location {
   lon: number;
   source: "zip" | "geolocation";
   zipCode?: string;
+  city?: string;
+  state?: string;
 }
 
 // NOAA API response types
