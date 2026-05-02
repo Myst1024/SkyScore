@@ -304,7 +304,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
               }}
               tick={{ fontSize: 12 }}
             />
-            <YAxis domain={[0, 100]} width={30} tick={{ fontSize: 12 }} />
+            <YAxis domain={[0, 100]} ticks={[20, 40, 60, 80]} width={30} tick={{ fontSize: 12 }} />
             <Tooltip content={<CustomTooltip />} />
 
             {/* Nighttime shading */}
