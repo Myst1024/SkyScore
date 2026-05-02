@@ -184,6 +184,41 @@ function isDaylightHours(timestamp: string, lat: number, lon: number): boolean {
 }
 
 /**
+ * Calculate sunlight value (0-100) for a given time
+ * 0 = nautical dawn/dusk, 100 = solar noon
+ * @param timestamp - ISO 8601 timestamp string
+ * @param lat - Latitude
+ * @param lon - Longitude
+ * @returns sunlight value from 0-100
+ */
+function calculateSunlightValue(timestamp: string, lat: number, lon: number): number {
+  const date = new Date(timestamp);
+  const times = SunCalc.getTimes(date, lat, lon);
+
+  const nauticalDawn = times.nauticalDawn.getTime();
+  const solarNoon = times.solarNoon.getTime();
+  const nauticalDusk = times.nauticalDusk.getTime();
+  const currentTime = date.getTime();
+
+  // Before nautical dawn or after nautical dusk: 0
+  if (currentTime < nauticalDawn || currentTime > nauticalDusk) {
+    return 0;
+  }
+
+  // Between nautical dawn and solar noon: 0 to 100
+  if (currentTime <= solarNoon) {
+    const totalDuration = solarNoon - nauticalDawn;
+    const elapsed = currentTime - nauticalDawn;
+    return Math.round((elapsed / totalDuration) * 100);
+  }
+
+  // Between solar noon and nautical dusk: 100 to 0
+  const totalDuration = nauticalDusk - solarNoon;
+  const elapsed = currentTime - solarNoon;
+  return Math.round(100 - (elapsed / totalDuration) * 100);
+}
+
+/**
  * Parse NOAA hourly forecast data into our HourlyWeatherData format
  * @param forecast - The hourly forecast response from NOAA
  * @param lat - Latitude for calculating daylight hours
@@ -207,6 +242,7 @@ export function parseWeatherData(
       windSpeed: gridMaps?.windSpeed.get(periodTimeUTC) ?? 0,
       precipitationChance: period.probabilityOfPrecipitation?.value ?? 0,
       cloudCover: gridMaps?.skyCover.get(periodTimeUTC) ?? 50,
+      sunlight: calculateSunlightValue(period.startTime, lat, lon),
       isDaytime: isDaylightHours(period.startTime, lat, lon),
       shortForecast: period.shortForecast,
     };

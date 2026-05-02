@@ -87,6 +87,15 @@ const PARAMETER_CONFIGS: Record<WeatherParameter, ParameterConfig> = {
     step: 5,
     unit: "%",
   },
+  sunlight: {
+    id: "sunlight",
+    label: "Sunlight",
+    description: "Your ideal sunlight level (0=dawn/dusk, 100=solar noon)",
+    min: 0,
+    max: 100,
+    step: 5,
+    unit: "",
+  },
 };
 
 const SECTION_INFO: Record<PrioritySection, { label: string; color: string }> = {

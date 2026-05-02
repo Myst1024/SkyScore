@@ -33,6 +33,7 @@ interface ChartDataPoint {
   windSpeed: number;
   precipitationChance: number;
   cloudCover: number;
+  sunlight: number;
   isDaytime: boolean;
   shortForecast?: string;
   // Individual parameter scores
@@ -41,6 +42,7 @@ interface ChartDataPoint {
   windScore: number;
   rainScore: number;
   cloudCoverScore: number;
+  sunlightScore: number;
 }
 
 interface ParameterConfig {
@@ -143,6 +145,18 @@ function CustomTooltip({ active, payload }: TooltipProps) {
               </span>
             </div>
           </div>
+          <div className="flex justify-between items-center">
+            <span>Sunlight:</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{data.sunlight}/100</span>
+              <span
+                className="font-bold text-[10px]"
+                style={{ color: getScoreImpactColor(data.sunlightScore) }}
+              >
+                ({data.sunlightScore})
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -185,6 +199,12 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
       label: "Cloud Cover",
       color: "hsl(280, 70%, 50%)",
     },
+    {
+      key: "sunlight",
+      dataKey: "sunlightScore",
+      label: "Sunlight",
+      color: "hsl(45, 90%, 55%)",
+    },
   ];
 
   // Filter parameters based on priority (exclude priority 3 = "Doesn't Matter")
@@ -214,6 +234,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
     windSpeed: score.weatherData.windSpeed,
     precipitationChance: score.weatherData.precipitationChance,
     cloudCover: score.weatherData.cloudCover,
+    sunlight: score.weatherData.sunlight,
     isDaytime: score.weatherData.isDaytime,
     shortForecast: score.weatherData.shortForecast,
     // Add individual parameter scores
@@ -222,6 +243,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
     windScore: score.breakdown.wind,
     rainScore: score.breakdown.rain,
     cloudCoverScore: score.breakdown.cloudCover,
+    sunlightScore: score.breakdown.sunlight,
   }));
 
   // Find day boundaries (midnight points) for vertical separators

@@ -80,6 +80,33 @@ function calculateParameterScore(
 }
 
 /**
+ * Calculate score for sunlight parameter with special logic
+ * If max is 100, treat middle-to-100 as perfect
+ * Otherwise, treat it like other parameters
+ */
+function calculateSunlightScore(value: number, min: number, max: number): number {
+  // Special case: if max is 100, treat middle-to-100 as perfect
+  if (max === 100) {
+    const midpoint = (min + max) / 2;
+
+    // Value is at or above midpoint: perfect score
+    if (value >= midpoint) {
+      return 100;
+    }
+
+    // Below midpoint: scale linearly from negative (below min) to 100 (at midpoint)
+    // The score at min is 0, and continues linearly below (capped at 0)
+    const range = midpoint - min;
+    const distanceAboveMin = value - min;
+    const score = (distanceAboveMin / range) * 100;
+    return Math.max(0, Math.round(score));
+  }
+
+  // Otherwise, use standard parameter scoring
+  return calculateParameterScore(value, min, max);
+}
+
+/**
  * Calculate Sky Score for a single hour of weather data
  */
 export function calculateScoreForHour(
@@ -121,15 +148,24 @@ export function calculateScoreForHour(
     preferences.cloudCover.min === 0,
   );
 
+  // Sunlight: special scoring logic
+  const sunlightScore = calculateSunlightScore(
+    weatherData.sunlight,
+    preferences.sunlight.min,
+    preferences.sunlight.max,
+  );
+
   // Calculate effective weights based on priority sections
   const tempWeight = getParameterWeight("temperature", preferences);
   const rainWeight = getParameterWeight("rain", preferences);
   const windWeight = getParameterWeight("wind", preferences);
   const humidityWeight = getParameterWeight("humidity", preferences);
   const cloudWeight = getParameterWeight("cloudCover", preferences);
+  const sunlightWeight = getParameterWeight("sunlight", preferences);
 
   // Calculate total weight for normalization
-  const totalWeight = tempWeight + rainWeight + windWeight + humidityWeight + cloudWeight;
+  const totalWeight =
+    tempWeight + rainWeight + windWeight + humidityWeight + cloudWeight + sunlightWeight;
 
   // Calculate weighted total score and normalize
   const weightedScore =
@@ -137,7 +173,8 @@ export function calculateScoreForHour(
     rainScore * rainWeight +
     windScore * windWeight +
     humidityScore * humidityWeight +
-    cloudScore * cloudWeight;
+    cloudScore * cloudWeight +
+    sunlightScore * sunlightWeight;
 
   const normalizedScore = weightedScore / totalWeight;
 
@@ -150,6 +187,7 @@ export function calculateScoreForHour(
       wind: Math.round(windScore),
       rain: Math.round(rainScore),
       cloudCover: Math.round(cloudScore),
+      sunlight: Math.round(sunlightScore),
     },
     weatherData,
   };
@@ -175,18 +213,20 @@ export function getDefaultPreferences(): WeatherPreferences {
     wind: { min: 0, max: 15 },
     rain: { min: 0, max: 20 },
     cloudCover: { min: 0, max: 70 },
+    sunlight: { min: 0, max: 100 },
     priorityOrder: {
       temperature: 0, // Highest Priority
       rain: 0, // Highest Priority
       wind: 1, // High Priority
       humidity: 2, // Medium Priority
       cloudCover: 2, // Medium Priority
+      sunlight: 3, // Doesn't Matter (default)
     },
     sectionOrder: {
       0: ["temperature", "rain"],
       1: ["wind"],
       2: ["humidity", "cloudCover"],
-      3: [],
+      3: ["sunlight"],
     },
   };
 }
