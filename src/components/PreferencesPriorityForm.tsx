@@ -17,8 +17,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cloneDeep, debounce, findKey, flatMap, values } from "lodash-es";
 import { GripVertical, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDefaultPreferences } from "@/lib/scoring-algorithm";
 import type { PrioritySection, WeatherParameter, WeatherPreferences } from "@/lib/types";
 import { Button } from "./ui/button";
@@ -257,6 +258,22 @@ export function PreferencesPriorityForm({
     () => preferences.sectionOrder,
   );
 
+  // Create a stable debounced version of onPreferencesChange
+  // This delays expensive recalculations/chart redraws while dragging sliders
+  const debouncedPreferencesChange = useRef(
+    debounce((prefs: WeatherPreferences) => {
+      onPreferencesChange(prefs);
+    }, 300), // 300ms delay
+  ).current;
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any pending debounced calls when component unmounts
+      debouncedPreferencesChange.cancel();
+    };
+  }, [debouncedPreferencesChange]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -276,7 +293,8 @@ export function PreferencesPriorityForm({
       [param]: { min: value[0], max: value[1] },
     };
     setLocalPrefs(updated);
-    onPreferencesChange(updated);
+    // Use debounced version to avoid expensive recalculations while dragging
+    debouncedPreferencesChange(updated);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -294,33 +312,19 @@ export function PreferencesPriorityForm({
     if (overId.startsWith("section-")) return;
 
     // Find which section the active item is in
-    let activeSection: PrioritySection | null = null;
-    Object.entries(sections).forEach(([section, params]) => {
-      if (params.includes(activeParam)) {
-        activeSection = Number(section) as PrioritySection;
-      }
-    });
-
+    const activeSectionKey = findKey(sections, (params) => params.includes(activeParam));
+    const activeSection =
+      activeSectionKey !== undefined ? (Number(activeSectionKey) as PrioritySection) : null;
     if (activeSection === null) return;
 
     // Dropping over another parameter
     const overParam = overId as WeatherParameter;
-    let overSection: PrioritySection | null = null;
-
-    Object.entries(sections).forEach(([section, params]) => {
-      if (params.includes(overParam)) {
-        overSection = Number(section) as PrioritySection;
-      }
-    });
-
+    const overSectionKey = findKey(sections, (params) => params.includes(overParam));
+    const overSection =
+      overSectionKey !== undefined ? (Number(overSectionKey) as PrioritySection) : null;
     if (overSection === null) return;
 
-    const newSections: Record<PrioritySection, WeatherParameter[]> = {
-      0: [...sections[0]],
-      1: [...sections[1]],
-      2: [...sections[2]],
-      3: [...sections[3]],
-    };
+    const newSections = cloneDeep(sections);
 
     if (activeSection === overSection) {
       // Reordering within the same section
@@ -360,13 +364,9 @@ export function PreferencesPriorityForm({
     const overId = over.id as string;
 
     // Find which section the active item is currently in
-    let activeSection: PrioritySection | null = null;
-    Object.entries(sections).forEach(([section, params]) => {
-      if (params.includes(activeParam)) {
-        activeSection = Number(section) as PrioritySection;
-      }
-    });
-
+    const activeSectionKey = findKey(sections, (params) => params.includes(activeParam));
+    const activeSection =
+      activeSectionKey !== undefined ? (Number(activeSectionKey) as PrioritySection) : null;
     if (activeSection === null) return;
 
     // Check if dropping over an empty section
@@ -375,12 +375,7 @@ export function PreferencesPriorityForm({
 
       if (activeSection !== targetSection) {
         // Move to the empty section
-        const newSections: Record<PrioritySection, WeatherParameter[]> = {
-          0: [...sections[0]],
-          1: [...sections[1]],
-          2: [...sections[2]],
-          3: [...sections[3]],
-        };
+        const newSections = cloneDeep(sections);
         (newSections[activeSection] as WeatherParameter[]) = (
           newSections[activeSection] as WeatherParameter[]
         ).filter((p) => p !== activeParam);
@@ -427,7 +422,7 @@ export function PreferencesPriorityForm({
     setSections(defaults.sectionOrder);
   };
 
-  const allParams = Object.values(sections).flat();
+  const allParams = flatMap(values(sections));
 
   return (
     <Card>

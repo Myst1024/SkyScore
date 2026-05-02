@@ -1,3 +1,4 @@
+import { flatMap, values } from "lodash-es";
 import { AlertCircle, Cloud, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ForecastChart } from "./components/ForecastChart";
@@ -71,9 +72,7 @@ function loadPreferences(): WeatherPreferences {
       }
 
       // Then, add any new parameters to their default sections
-      const allParamsInSections = new Set(
-        Object.values(mergedSectionOrder).flat() as WeatherParameter[],
-      );
+      const allParamsInSections = new Set(flatMap(values(mergedSectionOrder)));
       for (const param of Object.keys(mergedPriorityOrder) as WeatherParameter[]) {
         if (!allParamsInSections.has(param)) {
           const section = mergedPriorityOrder[param];
