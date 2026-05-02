@@ -343,7 +343,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
               dataKey="score"
               stroke="hsl(210, 100%, 50%)"
               strokeWidth={hoveredLine === null || hoveredLine === "score" ? 3 : 1.5}
-              strokeOpacity={hoveredLine === null || hoveredLine === "score" ? 1 : 0.3}
+              strokeOpacity={1}
               dot={false}
               activeDot={{ r: 6 }}
               onMouseEnter={() => setHoveredLine("score")}
@@ -365,7 +365,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
                 className="w-8 h-0.5 rounded-full"
                 style={{
                   backgroundColor: "hsl(210, 100%, 50%)",
-                  opacity: hoveredLine === null || hoveredLine === "score" ? 1 : 0.3,
+                  opacity: 1,
                 }}
               />
               <span className={hoveredLine === "score" ? "font-semibold" : ""}>Sky Score</span>
