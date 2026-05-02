@@ -126,10 +126,12 @@ export function calculateScoreForHour(
     preferences.humidity.max,
   );
 
+  // Wind: treat 0 as ideal if min is 0
   const windScore = calculateParameterScore(
     weatherData.windSpeed,
     preferences.wind.min,
     preferences.wind.max,
+    preferences.wind.min === 0,
   );
 
   // Rain: treat 0 as ideal if min is 0
