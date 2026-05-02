@@ -1,3 +1,4 @@
+import SunCalc from "suncalc";
 import type {
   APIError,
   ForecastData,
@@ -169,12 +170,30 @@ function createGridDataMaps(gridData: NOAAGridDataResponse): {
 }
 
 /**
+ * Determine if a given time is during daylight hours using suncalc
+ * @param timestamp - ISO 8601 timestamp string
+ * @param lat - Latitude
+ * @param lon - Longitude
+ * @returns true if the time is between sunrise and sunset
+ */
+function isDaylightHours(timestamp: string, lat: number, lon: number): boolean {
+  const date = new Date(timestamp);
+  const times = SunCalc.getTimes(date, lat, lon);
+
+  return date >= times.sunrise && date <= times.sunset;
+}
+
+/**
  * Parse NOAA hourly forecast data into our HourlyWeatherData format
  * @param forecast - The hourly forecast response from NOAA
+ * @param lat - Latitude for calculating daylight hours
+ * @param lon - Longitude for calculating daylight hours
  * @param gridMaps - Maps of timestamps to weather values from grid data
  */
 export function parseWeatherData(
   forecast: NOAAHourlyForecastResponse,
+  lat: number,
+  lon: number,
   gridMaps?: { skyCover: Map<string, number>; windSpeed: Map<string, number> },
 ): HourlyWeatherData[] {
   return forecast.properties.periods.map((period) => {
@@ -188,7 +207,7 @@ export function parseWeatherData(
       windSpeed: gridMaps?.windSpeed.get(periodTimeUTC) ?? 0,
       precipitationChance: period.probabilityOfPrecipitation?.value ?? 0,
       cloudCover: gridMaps?.skyCover.get(periodTimeUTC) ?? 50,
-      isDaytime: period.isDaytime,
+      isDaytime: isDaylightHours(period.startTime, lat, lon),
       shortForecast: period.shortForecast,
     };
 
@@ -230,7 +249,7 @@ export async function getForecastForLocation(
     const gridMaps = createGridDataMaps(gridData);
 
     // Step 4: Parse weather data
-    const allPeriods = parseWeatherData(hourlyForecast, gridMaps);
+    const allPeriods = parseWeatherData(hourlyForecast, lat, lon, gridMaps);
 
     // Step 5: Limit to 5 days (120 hours)
     const periods = allPeriods.slice(0, 120);
