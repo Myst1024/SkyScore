@@ -331,7 +331,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
                 stroke={param.color}
                 strokeWidth={hoveredLine === param.dataKey ? 2.5 : 1.5}
                 strokeOpacity={
-                  hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05
+                  hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.15
                 }
                 dot={false}
                 activeDot={{ r: 4 }}
@@ -386,7 +386,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
                   style={{
                     backgroundColor: param.color,
                     opacity:
-                      hoveredLine === null ? 0.15 : hoveredLine === param.dataKey ? 0.7 : 0.05,
+                      hoveredLine === null ? 0.25 : hoveredLine === param.dataKey ? 0.7 : 0.25,
                   }}
                 />
                 <span className={hoveredLine === param.dataKey ? "font-semibold" : ""}>
