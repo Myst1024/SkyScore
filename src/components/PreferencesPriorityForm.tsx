@@ -148,7 +148,7 @@ function SortableParameterItem({ parameter, config, value, onChange }: SortableP
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors touch-none"
           {...attributes}
           {...listeners}
         >
@@ -275,7 +275,12 @@ export function PreferencesPriorityForm({
   }, [debouncedPreferencesChange]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 50, // 150ms delay before drag starts (prevents accidental drags while scrolling)
+        tolerance: 5, // 5px tolerance for minor finger movements during the delay
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
