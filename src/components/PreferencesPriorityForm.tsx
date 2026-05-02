@@ -47,7 +47,7 @@ const PARAMETER_CONFIGS: Record<WeatherParameter, ParameterConfig> = {
     label: "Temperature",
     description: "Your ideal temperature range",
     min: 0,
-    max: 110,
+    max: 100,
     step: 1,
     unit: "°F",
   },
