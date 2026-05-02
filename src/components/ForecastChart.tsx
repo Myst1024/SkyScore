@@ -72,7 +72,10 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const data = payload[0]!.payload as ChartDataPoint;
 
   return (
-    <div className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-2">
+    <div
+      className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-2"
+      style={{ opacity: 0.9 }}
+    >
       <div className="font-semibold text-sm border-b pb-2">{formatTooltipTime(data.timestamp)}</div>
       <div className="space-y-1 text-xs">
         <div className="flex items-center justify-between gap-4">
@@ -305,7 +308,7 @@ export function ForecastChart({ scores, preferences }: ForecastChartProps) {
               tick={{ fontSize: 12 }}
             />
             <YAxis domain={[0, 100]} ticks={[20, 40, 60, 80]} width={30} tick={{ fontSize: 12 }} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} offset={{ x: 40, y: -100 }} />
 
             {/* Nighttime shading */}
             {nighttimePeriods.map((period) => (
