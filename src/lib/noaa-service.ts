@@ -1,4 +1,3 @@
-import { createUVIndexMap, getUVIndexByCityState, getUVValueForTimestamp } from "./epa-service";
 import type {
   APIError,
   ForecastData,
@@ -173,12 +172,10 @@ function createGridDataMaps(gridData: NOAAGridDataResponse): {
  * Parse NOAA hourly forecast data into our HourlyWeatherData format
  * @param forecast - The hourly forecast response from NOAA
  * @param gridMaps - Maps of timestamps to weather values from grid data
- * @param uvMap - Map of timestamps to UV index values from EPA
  */
 export function parseWeatherData(
   forecast: NOAAHourlyForecastResponse,
   gridMaps?: { skyCover: Map<string, number>; windSpeed: Map<string, number> },
-  uvMap?: Map<string, number>,
 ): HourlyWeatherData[] {
   return forecast.properties.periods.map((period) => {
     // Convert period timestamp to UTC ISO format to match map keys
@@ -191,7 +188,6 @@ export function parseWeatherData(
       windSpeed: gridMaps?.windSpeed.get(periodTimeUTC) ?? 0,
       precipitationChance: period.probabilityOfPrecipitation?.value ?? 0,
       cloudCover: gridMaps?.skyCover.get(periodTimeUTC) ?? 50,
-      uvIndex: uvMap ? getUVValueForTimestamp(period.startTime, uvMap) : 5,
       isDaytime: period.isDaytime,
       shortForecast: period.shortForecast,
     };
@@ -224,25 +220,17 @@ export async function getForecastForLocation(
       pointsData.properties.state ||
       pointsData.properties.relativeLocation?.properties?.state;
 
-    // Step 2: Fetch weather data and UV index in parallel
-    const [hourlyForecast, gridData, uvData] = await Promise.all([
+    // Step 2: Fetch weather data in parallel
+    const [hourlyForecast, gridData] = await Promise.all([
       getHourlyForecast(pointsData.properties.forecastHourly),
       getGridData(pointsData.properties.forecastGridData),
-      // Fetch UV index if we have city and state
-      locationCity && locationState
-        ? getUVIndexByCityState(locationCity, locationState).catch((err) => {
-            console.warn("Failed to fetch UV index data:", err);
-            return [];
-          })
-        : Promise.resolve([]),
     ]);
 
-    // Step 3: Create maps from grid data and UV data
+    // Step 3: Create maps from grid data
     const gridMaps = createGridDataMaps(gridData);
-    const uvMap = uvData.length > 0 ? createUVIndexMap(uvData) : undefined;
 
-    // Step 4: Parse weather data with all data sources
-    const allPeriods = parseWeatherData(hourlyForecast, gridMaps, uvMap);
+    // Step 4: Parse weather data
+    const allPeriods = parseWeatherData(hourlyForecast, gridMaps);
 
     // Step 5: Limit to 5 days (120 hours)
     const periods = allPeriods.slice(0, 120);

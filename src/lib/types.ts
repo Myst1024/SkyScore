@@ -1,11 +1,5 @@
 // Weather parameter types
-export type WeatherParameter =
-  | "temperature"
-  | "humidity"
-  | "wind"
-  | "rain"
-  | "cloudCover"
-  | "uvIndex";
+export type WeatherParameter = "temperature" | "humidity" | "wind" | "rain" | "cloudCover";
 
 // Priority section (0 = highest, 3 = lowest)
 export type PrioritySection = 0 | 1 | 2 | 3;
@@ -23,7 +17,6 @@ export interface WeatherPreferences {
   wind: WeatherPreferenceRange;
   rain: WeatherPreferenceRange;
   cloudCover: WeatherPreferenceRange;
-  uvIndex: WeatherPreferenceRange;
   // Priority ordering: which section each parameter belongs to
   priorityOrder: Record<WeatherParameter, PrioritySection>;
   // Visual order within each section
@@ -38,7 +31,6 @@ export interface HourlyWeatherData {
   windSpeed: number; // mph
   precipitationChance: number; // percentage (0-100)
   cloudCover: number; // percentage (0-100)
-  uvIndex: number; // UV index (0-11+)
   isDaytime: boolean; // true if during daylight hours
   shortForecast?: string; // e.g., "Partly Cloudy"
 }
@@ -65,7 +57,6 @@ export interface SkyScore {
     wind: number;
     rain: number;
     cloudCover: number;
-    uvIndex: number;
   };
   weatherData: HourlyWeatherData;
 }

@@ -31,6 +31,7 @@ function loadPreferences(): WeatherPreferences {
       const defaults = getDefaultPreferences();
 
       // Merge preference ranges: keep user's existing values, add new ones from defaults
+      // Filter out any deprecated parameters (like uvIndex)
       const mergedRanges: Partial<Record<WeatherParameter, WeatherPreferenceRange>> = {};
       for (const param of Object.keys(defaults) as Array<keyof typeof defaults>) {
         if (param !== "priorityOrder" && param !== "sectionOrder") {
@@ -39,12 +40,18 @@ function loadPreferences(): WeatherPreferences {
       }
 
       // Merge priorityOrder: keep user's existing, add new parameters from defaults
+      // Filter out any deprecated parameters
       const mergedPriorityOrder: Record<WeatherParameter, PrioritySection> = {
         ...defaults.priorityOrder,
-        ...parsed.priorityOrder,
       };
+      for (const param of Object.keys(parsed.priorityOrder || {}) as WeatherParameter[]) {
+        if (param in defaults.priorityOrder) {
+          mergedPriorityOrder[param] = parsed.priorityOrder[param];
+        }
+      }
 
       // Merge sectionOrder: reconstruct sections with user's order plus new parameters
+      // Filter out any deprecated parameters
       const mergedSectionOrder: Record<PrioritySection, WeatherParameter[]> = {
         0: [],
         1: [],
@@ -52,11 +59,13 @@ function loadPreferences(): WeatherPreferences {
         3: [],
       };
 
-      // First, preserve user's existing arrangement
+      // First, preserve user's existing arrangement (filtering out deprecated params)
       if (parsed.sectionOrder) {
         for (const section of [0, 1, 2, 3] as PrioritySection[]) {
           if (Array.isArray(parsed.sectionOrder[section])) {
-            mergedSectionOrder[section] = [...parsed.sectionOrder[section]];
+            mergedSectionOrder[section] = parsed.sectionOrder[section].filter(
+              (param: WeatherParameter) => param in defaults.priorityOrder,
+            );
           }
         }
       }
