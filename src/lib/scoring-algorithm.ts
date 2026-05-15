@@ -39,14 +39,18 @@ function calculateParameterScore(
   }
 
   // Special case: if min is 0 and treatZeroAsIdeal is true
-  // (for rain and cloud cover when user wants 0)
+  // (for rain, wind, and cloud cover when user wants 0)
   if (treatZeroAsIdeal && min === 0) {
-    if (value === 0) {
-      return 100; // Perfect
+    const idealThreshold = max * 0.2; // First 20% of range is ideal
+
+    if (value <= idealThreshold) {
+      return 100; // Perfect score for first 20% of range
     }
     if (value <= max) {
-      // Linear decay from 100 at 0 to 0 at max
-      return 100 * (1 - value / max);
+      // Linear decay from 100 at idealThreshold to 0 at max
+      const decayRange = max - idealThreshold;
+      const distanceAboveIdeal = value - idealThreshold;
+      return 100 * (1 - distanceAboveIdeal / decayRange);
     }
     return 0; // Above max
   }

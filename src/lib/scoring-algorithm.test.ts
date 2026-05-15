@@ -330,7 +330,7 @@ describe("calculateParameterScore for rain (treatZeroAsIdeal)", () => {
     expect(score.breakdown.rain).toBe(100);
   });
 
-  test("precipitation should decay linearly from 0 to max when min is 0", () => {
+  test("precipitation should have ideal zone (0-20% of max) then decay to max when min is 0", () => {
     const preferences = {
       ...getDefaultPreferences(),
       rain: { min: 0, max: 20 },
@@ -338,9 +338,10 @@ describe("calculateParameterScore for rain (treatZeroAsIdeal)", () => {
 
     const testCases = [
       { precip: 0, expectedScore: 100 },
-      { precip: 5, expectedScore: 75 },
-      { precip: 10, expectedScore: 50 },
-      { precip: 15, expectedScore: 25 },
+      { precip: 4, expectedScore: 100 }, // Within 20% ideal threshold
+      { precip: 5, expectedScore: 94 }, // Start of decay: 100*(1-(5-4)/(20-4))
+      { precip: 10, expectedScore: 63 }, // 100*(1-(10-4)/(20-4))
+      { precip: 15, expectedScore: 31 }, // 100*(1-(15-4)/(20-4))
       { precip: 20, expectedScore: 0 },
     ];
 
@@ -413,7 +414,7 @@ describe("calculateParameterScore for cloudCover (treatZeroAsIdeal)", () => {
     expect(score.breakdown.cloudCover).toBe(100);
   });
 
-  test("cloud cover should decay linearly from 0 to max when min is 0", () => {
+  test("cloud cover should have ideal zone (0-20% of max) then decay to max when min is 0", () => {
     const preferences = {
       ...getDefaultPreferences(),
       cloudCover: { min: 0, max: 40 },
@@ -421,9 +422,10 @@ describe("calculateParameterScore for cloudCover (treatZeroAsIdeal)", () => {
 
     const testCases = [
       { clouds: 0, expectedScore: 100 },
-      { clouds: 10, expectedScore: 75 },
-      { clouds: 20, expectedScore: 50 },
-      { clouds: 30, expectedScore: 25 },
+      { clouds: 8, expectedScore: 100 }, // Within 20% ideal threshold
+      { clouds: 10, expectedScore: 94 }, // Start of decay: 100*(1-(10-8)/(40-8))
+      { clouds: 20, expectedScore: 63 }, // 100*(1-(20-8)/(40-8))
+      { clouds: 30, expectedScore: 31 }, // 100*(1-(30-8)/(40-8))
       { clouds: 40, expectedScore: 0 },
     ];
 
@@ -517,18 +519,25 @@ describe("calculateParameterScore for humidity", () => {
 });
 
 describe("calculateParameterScore for wind", () => {
-  test("wind within range should score perfectly", () => {
+  test("wind should have ideal zone (0-20% of max) when min is 0", () => {
     const preferences = {
       ...getDefaultPreferences(),
       wind: { min: 0, max: 15 },
     };
 
-    const testCases = [0, 5, 10, 15];
-    for (const wind of testCases) {
+    // Ideal threshold = 15 * 0.2 = 3
+    const idealWinds = [0, 1, 2, 3];
+    for (const wind of idealWinds) {
       const weather = createWeatherData({ windSpeed: wind });
       const score = calculateScoreForHour(weather, preferences);
       expect(score.breakdown.wind).toBe(100);
     }
+
+    // Values above ideal threshold should decay
+    const decayingWind = createWeatherData({ windSpeed: 5 });
+    const decayScore = calculateScoreForHour(decayingWind, preferences);
+    expect(decayScore.breakdown.wind).toBeLessThan(100);
+    expect(decayScore.breakdown.wind).toBeGreaterThan(0);
   });
 
   test("wind above max should be penalized", () => {
@@ -592,9 +601,9 @@ describe("Priority weighting system", () => {
     const perfectWeather = createWeatherData({
       temperature: 75,
       precipitationChance: 0,
-      windSpeed: 5,
+      windSpeed: 0, // Within ideal 20% threshold
       humidity: 50,
-      cloudCover: 0, // Must be 0 for perfect score with treatZeroAsIdeal
+      cloudCover: 0, // Within ideal 20% threshold
       sunlight: 0, // Terrible, but should not matter
     });
 
@@ -662,10 +671,10 @@ describe("Priority weighting system", () => {
     // 5 parameters perfect, 1 parameter at 0
     const mixedWeather = createWeatherData({
       temperature: 75, // 100
-      precipitationChance: 0, // 100
-      windSpeed: 5, // 100
+      precipitationChance: 0, // 100 (within ideal threshold)
+      windSpeed: 2, // 100 (within ideal 20% threshold of 0-10 range)
       humidity: 50, // 100
-      cloudCover: 0, // Must be 0 for perfect score with treatZeroAsIdeal
+      cloudCover: 0, // 100 (within ideal threshold)
       sunlight: 0, // 0 with min=50, max=100 - far below range
     });
 
@@ -710,9 +719,9 @@ describe("calculateScoreForHour overall", () => {
     const perfectWeather = createWeatherData({
       temperature: 75, // Within 60-90
       humidity: 45, // Within 20-70
-      windSpeed: 8, // Within 0-15
-      precipitationChance: 0, // Perfect with treatZeroAsIdeal
-      cloudCover: 0, // Perfect with treatZeroAsIdeal
+      windSpeed: 3, // Within ideal 20% threshold (0-3 of 0-15 range)
+      precipitationChance: 0, // Perfect within ideal threshold
+      cloudCover: 0, // Perfect within ideal threshold
       sunlight: 80, // Above midpoint of 0-100
     });
 
